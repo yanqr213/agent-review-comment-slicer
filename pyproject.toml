@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-review-comment-slicer"
+version = "0.1.0"
+description = "Offline review comment triage and task slicing for AI coding agents."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "agent-review-comment-slicer contributors"}]
+keywords = ["ai", "codex", "code-review", "pull-request", "developer-tools", "ci"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Version Control :: Git",
+  "Topic :: Utilities",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/yanqr213/agent-review-comment-slicer"
+Issues = "https://github.com/yanqr213/agent-review-comment-slicer/issues"
+
+[project.scripts]
+agent-review-comment-slicer = "agent_review_comment_slicer.cli:main"
+arcs = "agent_review_comment_slicer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

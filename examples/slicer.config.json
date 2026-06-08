@@ -1,0 +1,10 @@
+{
+  "duplicate_similarity": 0.78,
+  "max_slice_comments": 4,
+  "max_slice_files": 2,
+  "fail_on_blocker": true,
+  "max_open_blockers": 0,
+  "max_duplicate_ratio": 0.5,
+  "max_untriaged_ratio": 0.4,
+  "default_owner": "codex-agent"
+}

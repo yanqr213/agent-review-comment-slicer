@@ -1,0 +1,7 @@
+{"id":"r1","path":"src/auth/session.py","line":42,"author":"reviewer-a","body":"Blocking: this stores a secret token in plain text. Please hash or encrypt it before persisting.","severity":"blocker","category":"security","url":"https://github.com/yanqr213/agent-review-comment-slicer/pull/1#discussion_r1"}
+{"id":"r2","path":"src/auth/session.py","line":43,"author":"ai-reviewer","body":"Security issue: token is persisted without encryption; must fix before merge.","category":"security"}
+{"id":"r3","path":"src/auth/session.py","line":88,"author":"reviewer-b","body":"Missing test coverage for expired session validation edge case.","category":"tests"}
+{"id":"r4","path":"src/api/retry.py","line":21,"author":"reviewer-a","body":"The retry loop can crash when the response object is None. Add a guard and a regression test.","severity":"high"}
+{"id":"r5","path":"README.md","line":12,"author":"reviewer-c","body":"Docs should mention how to export GitHub review comments into JSONL.","severity":"low","category":"docs"}
+{"id":"r6","body":"Nit: maybe rename this helper for clarity.","severity":"low"}
+{"id":"r7","path":"src/api/retry.py","line":22,"author":"ai-reviewer","body":"Retry loop can crash if response is None; please add guard.","severity":"high","category":"correctness"}
