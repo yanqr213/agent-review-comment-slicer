@@ -11,6 +11,13 @@ JSON 报告包含：
 
 JUnit 报告把每条 gate warning 转成 failure，方便在 GitHub Actions 页面直接看到失败原因。
 
+`prompts` 输出会写入：
+
+- `agent-prompts/index.md`：所有 prompt 文件的索引、严重度、分类、分数和文件数。
+- `agent-prompts/Sxxx.md`：单个 work slice 的 agent 修复提示词，包含范围、文件、checklist、原始评论摘要和完成规则。
+
 ## English
 
 The JSON report contains `summary`, `clusters`, `slices`, and `warnings`. Each cluster keeps the original comments so a reviewer can audit the deduplication result. Each slice is designed to be assigned to one AI coding agent.
+
+The `prompts` output writes `agent-prompts/index.md` plus one `agent-prompts/Sxxx.md` file per work slice. Each prompt scopes the assigned files, checklist, original review comments, and completion rules for one agent session.

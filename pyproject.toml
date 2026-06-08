@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-review-comment-slicer"
-version = "0.1.0"
+version = "0.2.0"
 description = "Offline review comment triage and task slicing for AI coding agents."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,7 +30,9 @@ dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/yanqr213/agent-review-comment-slicer"
+Repository = "https://github.com/yanqr213/agent-review-comment-slicer"
 Issues = "https://github.com/yanqr213/agent-review-comment-slicer/issues"
+Changelog = "https://github.com/yanqr213/agent-review-comment-slicer/blob/main/CHANGELOG.md"
 
 [project.scripts]
 agent-review-comment-slicer = "agent_review_comment_slicer.cli:main"

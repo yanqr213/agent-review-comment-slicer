@@ -28,7 +28,7 @@ from agent_review_comment_slicer.config import explain_config, load_config, vali
 from agent_review_comment_slicer.models import ReviewComment, SlicerConfig
 from agent_review_comment_slicer.parser import flatten_review_threads, parse_csv, parse_json, parse_jsonl
 from agent_review_comment_slicer.planner import build_review_plan, build_slices, cluster_comments, summarize_comment
-from agent_review_comment_slicer.reports import render_junit, render_markdown, write_reports
+from agent_review_comment_slicer.reports import render_agent_prompt, render_junit, render_markdown, render_prompt_index, write_reports
 
 
 class TempWorkspace(unittest.TestCase):
@@ -279,10 +279,24 @@ class ReportTests(TempWorkspace):
         plan = build_review_plan([ReviewComment("1", "must fix security", "a.py")], SlicerConfig())
         self.assertIn("failure", render_junit(plan))
 
+    def test_render_prompt_index(self):
+        text = render_prompt_index(self.make_plan())
+        self.assertIn("Agent Review Fix Prompts", text)
+        self.assertIn("Use one prompt file per agent session", text)
+
+    def test_render_agent_prompt(self):
+        plan = self.make_plan()
+        text = render_agent_prompt(plan, plan.slices[0])
+        self.assertIn("Review Fix Prompt", text)
+        self.assertIn("Completion Rules", text)
+        self.assertIn("Review Comments", text)
+
     def test_write_reports_all(self):
         outputs = write_reports(self.make_plan(), self.root / "reports", ["all"])
         self.assertTrue((self.root / "reports" / "review-plan.json").exists())
+        self.assertTrue((self.root / "reports" / "agent-prompts" / "index.md").exists())
         self.assertIn("markdown", outputs)
+        self.assertIn("prompts", outputs)
 
     def test_write_reports_selected(self):
         outputs = write_reports(self.make_plan(), self.root / "reports", ["json"])
@@ -302,6 +316,9 @@ class CliTests(TempWorkspace):
 
     def test_parse_formats(self):
         self.assertEqual(parse_formats("json,markdown"), ["json", "markdown"])
+
+    def test_parse_formats_prompts(self):
+        self.assertEqual(parse_formats("prompts"), ["prompts"])
 
     def test_parse_formats_default(self):
         self.assertEqual(parse_formats(" , "), ["markdown", "json", "junit"])
@@ -335,9 +352,10 @@ class CliTests(TempWorkspace):
 
     def test_main_writes_reports(self):
         input_path = self.write("comments.jsonl", '{"body":"nit rename","path":"a.py","severity":"low"}\n')
-        code = self.run_main(["--input", str(input_path), "--out", str(self.root / "reports"), "--formats", "markdown,json,junit", "--no-fail"])
+        code = self.run_main(["--input", str(input_path), "--out", str(self.root / "reports"), "--formats", "markdown,json,junit,prompts", "--no-fail"])
         self.assertEqual(code, 0)
         self.assertTrue((self.root / "reports" / "junit.xml").exists())
+        self.assertTrue((self.root / "reports" / "agent-prompts" / "index.md").exists())
 
     def test_module_version(self):
         env = os.environ.copy()

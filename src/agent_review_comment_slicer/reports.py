@@ -1,20 +1,21 @@
-"""Report rendering."""
+"""Report and agent-prompt rendering."""
 
 from __future__ import annotations
 
 import html
 import json
+import re
 from pathlib import Path
 from typing import Iterable
 
-from .models import ReviewPlan
+from .models import ReviewPlan, WorkSlice
 
 
 def write_reports(plan: ReviewPlan, out_dir: Path, formats: Iterable[str]) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     requested = set(formats)
     if "all" in requested:
-        requested = {"markdown", "json", "junit"}
+        requested = {"markdown", "json", "junit", "prompts"}
     outputs = {}
     if "markdown" in requested or "md" in requested:
         path = out_dir / "review-plan.md"
@@ -28,6 +29,10 @@ def write_reports(plan: ReviewPlan, out_dir: Path, formats: Iterable[str]) -> di
         path = out_dir / "junit.xml"
         write_text(path, render_junit(plan))
         outputs["junit"] = str(path)
+    if "prompts" in requested:
+        prompt_outputs = write_agent_prompts(plan, out_dir / "agent-prompts")
+        outputs["prompts"] = str(out_dir / "agent-prompts" / "index.md")
+        outputs.update(prompt_outputs)
     return outputs
 
 
@@ -93,6 +98,118 @@ def render_junit(plan: ReviewPlan) -> str:
         lines.append("  </testcase>")
     lines.append("</testsuite>")
     return "\n".join(lines) + "\n"
+
+
+def write_agent_prompts(plan: ReviewPlan, prompt_dir: Path) -> dict:
+    prompt_dir.mkdir(parents=True, exist_ok=True)
+    outputs = {}
+    index_path = prompt_dir / "index.md"
+    write_text(index_path, render_prompt_index(plan))
+    for work_slice in plan.slices:
+        path = prompt_dir / f"{safe_filename(work_slice.id)}.md"
+        write_text(path, render_agent_prompt(plan, work_slice))
+        outputs[f"prompt:{work_slice.id}"] = str(path)
+    return outputs
+
+
+def render_prompt_index(plan: ReviewPlan) -> str:
+    summary = plan.to_dict()["summary"]
+    lines = [
+        "# Agent Review Fix Prompts",
+        "",
+        f"- Open comments: {summary['open_count']}",
+        f"- Clusters: {summary['cluster_count']}",
+        f"- Work slices: {summary['slice_count']}",
+        f"- Gate passed: {'yes' if plan.gate_passed else 'no'}",
+        "",
+        "Use one prompt file per agent session. Each prompt is scoped to one review slice.",
+        "",
+        "| Prompt | Severity | Category | Score | Files | Title |",
+        "| --- | --- | --- | ---: | ---: | --- |",
+    ]
+    if not plan.slices:
+        lines.append("| - | info | none | 0 | 0 | No open review comments. |")
+    for work_slice in plan.slices:
+        lines.append(
+            f"| `{safe_filename(work_slice.id)}.md` | {work_slice.severity} | {work_slice.category} | "
+            f"{work_slice.score} | {len(work_slice.files)} | {escape_pipe(work_slice.title)} |"
+        )
+    if plan.warnings:
+        lines.extend(["", "## Gate Warnings", ""])
+        for warning in plan.warnings:
+            lines.append(f"- {warning}")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_agent_prompt(plan: ReviewPlan, work_slice: WorkSlice) -> str:
+    lines = [
+        f"# Review Fix Prompt: {work_slice.id}",
+        "",
+        "You are an AI coding agent assigned to resolve one focused code review slice. Verify the current repository state before editing, preserve unrelated user changes, and keep the fix limited to the files and comments below.",
+        "",
+        "## Slice Summary",
+        "",
+        f"- Title: {work_slice.title}",
+        f"- Severity: {work_slice.severity}",
+        f"- Category: {work_slice.category}",
+        f"- Owner: {work_slice.owner}",
+        f"- Score: {work_slice.score}",
+        f"- Gate currently passed: {'yes' if plan.gate_passed else 'no'}",
+        "",
+        "## Files",
+        "",
+    ]
+    if work_slice.files:
+        for path in work_slice.files:
+            lines.append(f"- `{path}`")
+    else:
+        lines.append("- No file path was provided; inspect the comments and ask for clarification if the target file cannot be inferred.")
+    lines.extend(["", "## Checklist", ""])
+    for item in work_slice.checklist:
+        lines.append(f"- [ ] {item}")
+    lines.extend(["", "## Review Comments", ""])
+    for cluster in work_slice.clusters:
+        lines.extend(
+            [
+                f"### {cluster.id}: {cluster.title}",
+                "",
+                f"- Severity: {cluster.severity}",
+                f"- Category: {cluster.category}",
+                f"- Reason: {cluster.reason}",
+                "",
+            ]
+        )
+        for comment in cluster.comments:
+            location = comment.path or "unassigned file"
+            if comment.line:
+                location = f"{location}:{comment.line}"
+            lines.append(f"- `{comment.id}` at `{location}` by {comment.author or 'unknown'}: {one_line(comment.body)}")
+            if comment.suggestion:
+                lines.append(f"  Suggested fix: {one_line(comment.suggestion)}")
+            if comment.url:
+                lines.append(f"  URL: {comment.url}")
+        lines.append("")
+    lines.extend(
+        [
+            "## Completion Rules",
+            "",
+            "- Fix the underlying issue, not only the visible symptom.",
+            "- Add or update tests when the comment asks for behavior, safety, or regression coverage.",
+            "- Re-run the narrowest relevant validation first, then the broader project validation if available.",
+            "- Leave a short handoff note listing changed files, validation run, unresolved comments, and residual risks.",
+            "- Do not close, hide, or mark review comments resolved from this prompt alone; let the reviewer or CI confirm.",
+        ]
+    )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def safe_filename(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9_.-]+", "-", value.strip())
+    return cleaned or "slice"
+
+
+def one_line(value: str) -> str:
+    return " ".join(str(value).split())
 
 
 def write_json(path: Path, data: dict) -> None:

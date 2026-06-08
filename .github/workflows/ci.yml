@@ -27,8 +27,9 @@ jobs:
             --input examples/review-comments.jsonl \
             --config examples/slicer.config.json \
             --out reports \
-            --formats markdown,json,junit \
+            --formats markdown,json,junit,prompts \
             --no-fail
           test -f reports/review-plan.md
           test -f reports/review-plan.json
           test -f reports/junit.xml
+          test -f reports/agent-prompts/index.md

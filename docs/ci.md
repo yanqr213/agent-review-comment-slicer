@@ -25,7 +25,7 @@ jobs:
             --input review-comments.jsonl \
             --config slicer.config.json \
             --out reports/review-comments \
-            --formats markdown,json,junit
+            --formats markdown,json,junit,prompts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -39,6 +39,10 @@ jobs:
 - `max_duplicate_ratio`：AI reviewer 重复评论过多时失败。
 - `max_untriaged_ratio`：缺路径或缺分类的评论过多时失败。
 
+`reports/review-comments/agent-prompts/` 会包含一个索引和每个 slice 的独立 prompt，可以作为 artifact 分发给多个 agent session。
+
 ## English
 
 Use this tool near the end of review when comments need to be turned into actionable AI-agent work packages. It can fail CI when blockers remain open, duplicate review noise is too high, or too many comments are missing path/category metadata.
+
+Include `prompts` in `--formats` when you want CI artifacts to contain ready-to-run prompt files under `agent-prompts/`.
