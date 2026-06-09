@@ -7,6 +7,7 @@ agent-review-comment-slicer 是一个离线的 PR/code review 评论归并与任
 - 面向 reviewer 的 Markdown 报告。
 - 面向自动化的 JSON 报告。
 - 面向 CI 的 JUnit gate。
+- 面向 GitHub Code Scanning 的 SARIF 报告。
 - 面向 Codex、Claude Code、Cursor 等 agent 的逐 slice 修复 prompt。
 
 它不调用 GitHub API，不调用模型，也不修改代码。你只需要把评论导出成 JSONL、JSON 或 CSV，本工具就能在本地或 CI 中稳定运行。
@@ -42,7 +43,7 @@ agent-review-comment-slicer \
   --input examples/review-comments.jsonl \
   --config examples/slicer.config.json \
   --out reports \
-  --formats markdown,json,junit,prompts \
+  --formats markdown,json,junit,sarif,prompts \
   --no-fail
 ```
 
@@ -51,6 +52,7 @@ agent-review-comment-slicer \
 - `review-plan.md`：给 reviewer 和 agent 看的工作包清单。
 - `review-plan.json`：给自动化、仪表盘或二次脚本使用。
 - `junit.xml`：给 CI 展示 gate warning。
+- `review-plan.sarif`：给 GitHub Code Scanning 展示去重后的 blocker/security/correctness 等 review cluster。
 - `agent-prompts/index.md`：每个 work slice 对应的 agent prompt 索引。
 - `agent-prompts/S001.md` 等：可直接粘给一个 agent session 的修复提示词。
 
@@ -75,7 +77,7 @@ agent-review-comment-slicer [options]
 - `--input`：JSONL、JSON 或 CSV 评论文件。
 - `--config`：JSON 配置文件。
 - `--out`：报告输出目录。
-- `--formats`：`markdown,json,junit,prompts,all`。
+- `--formats`：`markdown,json,junit,sarif,prompts,all`。
 - `--no-fail`：只生成报告，不用 gate 状态影响退出码。
 - `--print-config`：打印有效默认配置。
 
@@ -114,7 +116,7 @@ agent-review-comment-slicer [options]
     agent-review-comment-slicer \
       --input review-comments.jsonl \
       --out reports/review-comments \
-      --formats markdown,json,junit,prompts
+      --formats markdown,json,junit,sarif,prompts
 ```
 
 更多示例见 [docs/ci.md](docs/ci.md)。
@@ -142,7 +144,7 @@ PYTHONPATH=src python -m agent_review_comment_slicer \
 
 agent-review-comment-slicer is an offline review comment triage and task slicing tool for teams that use Codex, Claude Code, Cursor, or internal AI coding agents.
 
-It turns GitHub review comments, inline comments, review threads, and AI reviewer output into deduplicated issue clusters, small agent work slices, Markdown/JSON reports, per-slice agent fix prompts, and CI-ready JUnit gates.
+It turns GitHub review comments, inline comments, review threads, and AI reviewer output into deduplicated issue clusters, small agent work slices, Markdown/JSON reports, SARIF for GitHub Code Scanning, per-slice agent fix prompts, and CI-ready JUnit gates.
 
 ### Use Cases
 
@@ -151,6 +153,7 @@ It turns GitHub review comments, inline comments, review threads, and AI reviewe
 - Group comments by file and category.
 - Assign one small review slice to each coding agent.
 - Generate one ready-to-run fix prompt per review slice.
+- Upload deduplicated review clusters to GitHub Code Scanning via SARIF.
 - Fail CI when open blockers remain, duplicate noise is too high, or too many comments are missing path/category metadata.
 
 ### Install
@@ -166,7 +169,7 @@ agent-review-comment-slicer \
   --input examples/review-comments.jsonl \
   --config examples/slicer.config.json \
   --out reports \
-  --formats markdown,json,junit,prompts
+  --formats markdown,json,junit,sarif,prompts
 ```
 
 Important options:
@@ -174,7 +177,7 @@ Important options:
 - `--input`: JSONL, JSON, or CSV review comments.
 - `--config`: JSON configuration.
 - `--out`: report output directory.
-- `--formats`: `markdown,json,junit,prompts,all`.
+- `--formats`: `markdown,json,junit,sarif,prompts,all`.
 - `--no-fail`: report-only mode.
 - `--print-config`: print effective defaults.
 

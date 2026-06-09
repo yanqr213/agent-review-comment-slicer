@@ -11,6 +11,8 @@ JSON 报告包含：
 
 JUnit 报告把每条 gate warning 转成 failure，方便在 GitHub Actions 页面直接看到失败原因。
 
+SARIF 报告把每个去重后的 cluster 转成一个 Code Scanning result，并附带文件、行号、severity、category、重复数、score 和稳定 fingerprint。gate warning 会以 `review.gate` result 输出。
+
 `prompts` 输出会写入：
 
 - `agent-prompts/index.md`：所有 prompt 文件的索引、严重度、分类、分数和文件数。
@@ -19,5 +21,7 @@ JUnit 报告把每条 gate warning 转成 failure，方便在 GitHub Actions 页
 ## English
 
 The JSON report contains `summary`, `clusters`, `slices`, and `warnings`. Each cluster keeps the original comments so a reviewer can audit the deduplication result. Each slice is designed to be assigned to one AI coding agent.
+
+The SARIF report emits one GitHub Code Scanning result per deduplicated cluster, with file location, severity/category metadata, duplicate count, score, and a stable fingerprint. Gate warnings are emitted as `review.gate` results.
 
 The `prompts` output writes `agent-prompts/index.md` plus one `agent-prompts/Sxxx.md` file per work slice. Each prompt scopes the assigned files, checklist, original review comments, and completion rules for one agent session.

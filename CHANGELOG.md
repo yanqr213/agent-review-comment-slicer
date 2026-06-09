@@ -2,6 +2,13 @@
 
 ## 中文
 
+### 0.3.0 - 2026-06-09
+
+- 新增 `sarif` 输出格式，把去重后的 review comment cluster 输出为 GitHub Code Scanning result。
+- `all` 输出现在包含 `review-plan.sarif`。
+- SARIF 结果包含文件位置、严重度、分类、重复数、score、稳定 fingerprint 和 gate warning。
+- 更新中英文 README、CI 文档和报告 schema 文档。
+
 ### 0.2.0 - 2026-06-08
 
 - 新增 `prompts` 输出格式，为每个 work slice 生成可直接交给 Codex、Claude Code、Cursor 等 agent 的修复提示词。
@@ -20,6 +27,13 @@
 - 支持 blocker、重复率、未归类率 CI gate。
 
 ## English
+
+### 0.3.0 - 2026-06-09
+
+- Added a `sarif` output format that emits deduplicated review comment clusters as GitHub Code Scanning results.
+- Included `review-plan.sarif` in `all` output.
+- SARIF results include file locations, severity, category, duplicate counts, scores, stable fingerprints, and gate warnings.
+- Updated Chinese and English README, CI docs, and report schema docs.
 
 ### 0.2.0 - 2026-06-08
 

@@ -25,12 +25,16 @@ jobs:
             --input review-comments.jsonl \
             --config slicer.config.json \
             --out reports/review-comments \
-            --formats markdown,json,junit,prompts
+            --formats markdown,json,junit,sarif,prompts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: review-comment-plan
           path: reports/review-comments
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: reports/review-comments/review-plan.sarif
 ```
 
 团队常用 gate：
@@ -41,8 +45,12 @@ jobs:
 
 `reports/review-comments/agent-prompts/` 会包含一个索引和每个 slice 的独立 prompt，可以作为 artifact 分发给多个 agent session。
 
+`review-plan.sarif` 会把去重后的 cluster 作为 GitHub Code Scanning result。`blocker` / `high` 映射为 `error`，`medium` 映射为 `warning`，`low` 映射为 `note`；gate warning 会作为 `review.gate` result 出现。
+
 ## English
 
 Use this tool near the end of review when comments need to be turned into actionable AI-agent work packages. It can fail CI when blockers remain open, duplicate review noise is too high, or too many comments are missing path/category metadata.
 
 Include `prompts` in `--formats` when you want CI artifacts to contain ready-to-run prompt files under `agent-prompts/`.
+
+Include `sarif` in `--formats` when you want deduplicated review clusters to appear in GitHub Code Scanning. Blocker/high clusters map to `error`, medium clusters map to `warning`, low clusters map to `note`, and gate warnings are emitted as `review.gate` results.

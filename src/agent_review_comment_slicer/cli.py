@@ -22,7 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input", required=False, help="review comments in JSONL, JSON, or CSV")
     parser.add_argument("--config", help="JSON config path")
     parser.add_argument("--out", default="reports", help="report output directory")
-    parser.add_argument("--formats", default="markdown,json,junit", help="comma-separated report formats: markdown,json,junit,prompts,all")
+    parser.add_argument("--formats", default="markdown,json,junit", help="comma-separated report formats: markdown,json,junit,sarif,prompts,all")
     parser.add_argument("--no-fail", action="store_true", help="always exit 0 after writing reports")
     parser.add_argument("--print-config", action="store_true", help="print effective config and exit")
     return parser
@@ -54,7 +54,7 @@ def main(argv: List[str] = None) -> int:
 
 def parse_formats(value: str) -> List[str]:
     result = [item.strip().lower() for item in value.split(",") if item.strip()]
-    allowed = {"markdown", "md", "json", "junit", "prompts", "all"}
+    allowed = {"markdown", "md", "json", "junit", "sarif", "prompts", "all"}
     unknown = [item for item in result if item not in allowed]
     if unknown:
         raise ValueError(f"unknown report format(s): {', '.join(unknown)}")

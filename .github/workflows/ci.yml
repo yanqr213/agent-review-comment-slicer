@@ -27,9 +27,11 @@ jobs:
             --input examples/review-comments.jsonl \
             --config examples/slicer.config.json \
             --out reports \
-            --formats markdown,json,junit,prompts \
+            --formats markdown,json,junit,sarif,prompts \
             --no-fail
           test -f reports/review-plan.md
           test -f reports/review-plan.json
+          test -f reports/review-plan.sarif
           test -f reports/junit.xml
           test -f reports/agent-prompts/index.md
+          python -m json.tool reports/review-plan.sarif > /dev/null

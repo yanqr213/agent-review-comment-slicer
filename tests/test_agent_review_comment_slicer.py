@@ -28,7 +28,7 @@ from agent_review_comment_slicer.config import explain_config, load_config, vali
 from agent_review_comment_slicer.models import ReviewComment, SlicerConfig
 from agent_review_comment_slicer.parser import flatten_review_threads, parse_csv, parse_json, parse_jsonl
 from agent_review_comment_slicer.planner import build_review_plan, build_slices, cluster_comments, summarize_comment
-from agent_review_comment_slicer.reports import render_agent_prompt, render_junit, render_markdown, render_prompt_index, write_reports
+from agent_review_comment_slicer.reports import render_agent_prompt, render_junit, render_markdown, render_prompt_index, render_sarif, write_reports
 
 
 class TempWorkspace(unittest.TestCase):
@@ -279,6 +279,25 @@ class ReportTests(TempWorkspace):
         plan = build_review_plan([ReviewComment("1", "must fix security", "a.py")], SlicerConfig())
         self.assertIn("failure", render_junit(plan))
 
+    def test_render_sarif_maps_clusters_to_results(self):
+        data = json.loads(render_sarif(self.make_plan()))
+        run = data["runs"][0]
+        results = run["results"]
+
+        self.assertEqual(data["version"], "2.1.0")
+        self.assertEqual(run["tool"]["driver"]["name"], "agent-review-comment-slicer")
+        self.assertTrue(any(result["ruleId"] == "review.security" for result in results))
+        security = next(result for result in results if result["ruleId"] == "review.security")
+        self.assertEqual(security["level"], "error")
+        self.assertEqual(security["locations"][0]["physicalLocation"]["artifactLocation"]["uri"], "src/auth.py")
+        self.assertEqual(security["locations"][0]["physicalLocation"]["region"]["startLine"], 10)
+        self.assertIn("primaryLocationLineHash", security["partialFingerprints"])
+
+    def test_render_sarif_includes_gate_warnings(self):
+        plan = build_review_plan([ReviewComment("1", "must fix security", "a.py")], SlicerConfig())
+        data = json.loads(render_sarif(plan))
+        self.assertTrue(any(result["ruleId"] == "review.gate" for result in data["runs"][0]["results"]))
+
     def test_render_prompt_index(self):
         text = render_prompt_index(self.make_plan())
         self.assertIn("Agent Review Fix Prompts", text)
@@ -294,8 +313,10 @@ class ReportTests(TempWorkspace):
     def test_write_reports_all(self):
         outputs = write_reports(self.make_plan(), self.root / "reports", ["all"])
         self.assertTrue((self.root / "reports" / "review-plan.json").exists())
+        self.assertTrue((self.root / "reports" / "review-plan.sarif").exists())
         self.assertTrue((self.root / "reports" / "agent-prompts" / "index.md").exists())
         self.assertIn("markdown", outputs)
+        self.assertIn("sarif", outputs)
         self.assertIn("prompts", outputs)
 
     def test_write_reports_selected(self):
@@ -319,6 +340,9 @@ class CliTests(TempWorkspace):
 
     def test_parse_formats_prompts(self):
         self.assertEqual(parse_formats("prompts"), ["prompts"])
+
+    def test_parse_formats_sarif(self):
+        self.assertEqual(parse_formats("sarif"), ["sarif"])
 
     def test_parse_formats_default(self):
         self.assertEqual(parse_formats(" , "), ["markdown", "json", "junit"])
@@ -352,9 +376,10 @@ class CliTests(TempWorkspace):
 
     def test_main_writes_reports(self):
         input_path = self.write("comments.jsonl", '{"body":"nit rename","path":"a.py","severity":"low"}\n')
-        code = self.run_main(["--input", str(input_path), "--out", str(self.root / "reports"), "--formats", "markdown,json,junit,prompts", "--no-fail"])
+        code = self.run_main(["--input", str(input_path), "--out", str(self.root / "reports"), "--formats", "markdown,json,junit,sarif,prompts", "--no-fail"])
         self.assertEqual(code, 0)
         self.assertTrue((self.root / "reports" / "junit.xml").exists())
+        self.assertTrue((self.root / "reports" / "review-plan.sarif").exists())
         self.assertTrue((self.root / "reports" / "agent-prompts" / "index.md").exists())
 
     def test_module_version(self):
